@@ -27,9 +27,26 @@ Steam.CSGO = 730;
 // References will be stored here
 Steam.INTERFACES = {};
 
+var retrievedMethods = false;
+var readyHandlers = [];
 
 /**
- * Retrieve the current set of Steam WebAPI methods from the API itself
+ * Register a callback for when the API has been retrieved.
+ * Steam.ready() must be called to retrieve the methods.
+ *
+ * @param {Function} callback After the methods are retrieved
+ */
+Steam.onReady = function(callback) {
+    if (retrievedMethods) {
+        process.nextTick(callback);
+    } else {
+        readyHandlers.push(callback);
+    }
+};
+
+/**
+ * Retrieve the current set of Steam WebAPI methods from the API itself.
+ * When complete, the onReady handlers will be called as well.
  *
  * @param {String} (optional) key A Steam API key
  * @param {Function} callback After the methods are retrieved and compiled for reference
@@ -312,6 +329,12 @@ function retrieveSteamAPIMethods(key, callback) {
 
                 buildSteamWrapperMethod(_interface.name, method.name, method.version, method.httpmethod, requiredParams, optionalParams);
             }
+        }
+        if (!retrievedMethods) {
+            retrievedMethods = true;
+            readyHandlers.forEach(function(handler) {
+                handler();
+            });
         }
         callback();
 

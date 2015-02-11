@@ -1,3 +1,5 @@
+require('should');
+
 var fs = require('fs');
 var Steam = require('..');
 
@@ -8,12 +10,33 @@ try{ steamAPIKey = fs.readFileSync('../STEAM_KEY').toString(); } catch(e) {}
 try{ steamAPIKey = fs.readFileSync('./STEAM_KEY').toString(); } catch(e) {}
 
 describe('Node-Steam-WebAPI', function() {
+    console.log(steamAPIKey);
     this.timeout(10000); // Steam is slow sometimes
 
     describe('Initializing', function() {
 
         it('(you) should have provided a SteamAPI key', function() {
             steamAPIKey.should.not.be.empty;
+        });
+
+        it('should call register handlers when ready', function(done) {
+            Steam.onReady(function() {
+                console.log('called');
+                Steam.prototype.resolveVanityURL.should.be.a.Function;
+                Steam.prototype.getPlayerItems.should.be.a.Function;
+                Steam.prototype.getFriendList.should.be.a.Function;
+
+                // For the next test
+                delete Steam.prototype.resolveVanityURL;
+                delete Steam.prototype.getPlayerItems;
+                delete Steam.prototype.getFriendList;
+
+                done();
+            });
+
+            Steam.ready(steamAPIKey, function (err) {
+                if (err) return done(err);
+            });
         });
 
         it('should get list of methods (old alternative)', function(done) {
